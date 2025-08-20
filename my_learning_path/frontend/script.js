@@ -1,60 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Personalized Learning Path</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f6f8fa; margin: 0; padding: 0; }
-        .container { max-width: 420px; margin: 40px auto; background: #fff; border-radius: 12px; box-shadow: 0 2px 12px #0001; padding: 2em; }
-        h1 { text-align: center; color: #2d3a4a; font-size: 1.6em; margin-bottom: 1.2em; }
-        label { font-weight: 500; margin-top: 1em; display: block; color: #2d3a4a; }
-        input, textarea, select, button { width: 100%; margin-top: 0.5em; font-size: 1em; border-radius: 6px; border: 1px solid #d1d5db; padding: 0.6em; box-sizing: border-box; }
-        button { background: #2563eb; color: #fff; border: none; font-weight: 600; cursor: pointer; margin-top: 1.2em; transition: background 0.2s; }
-        button:hover { background: #1e40af; }
-        .topics-list { margin: 1em 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 0.5em; }
-        .topics-list li { background: #e0e7ef; border-radius: 4px; padding: 0.3em 0.7em; font-size: 0.98em; }
-        .result, .progress { background: #f1f5f9; border-radius: 8px; padding: 1em; margin-top: 1.2em; min-height: 2em; }
-        .path-step { display: inline-block; margin: 0 0.2em; padding: 0.2em 0.6em; background: #dbeafe; border-radius: 4px; }
-        .success { color: #059669; }
-        .error { color: #dc2626; }
-    </style>
-</head>
-<body>
-<div class="container">
-    <h1>Personalized Learning Path</h1>
-    <form id="graphForm">
-        <label>Paste links to learning resources (one per line):</label>
-        <textarea id="urls" rows="3" required placeholder="https://example.com/resource1&#10;https://example.com/resource2"></textarea>
-        <button type="submit">Build My Topics</button>
-    </form>
-    <div id="topicsSection" style="display:none;">
-        <label>Your Topics:</label>
-        <ul id="topicsList" class="topics-list"></ul>
-        <form id="pathForm">
-            <label>Start from:</label>
-            <select id="startTopic" required></select>
-            <label>Goal topic:</label>
-            <select id="goalTopic" required></select>
-            <button type="submit">Show My Learning Path</button>
-        </form>
-    </div>
-    <div id="pathSection" style="display:none;">
-        <label>Your Recommended Path:</label>
-        <div id="pathResult" class="result"></div>
-        <form id="progressForm">
-            <label>Mark a topic as learned:</label>
-            <select id="learnedTopic"></select>
-            <button type="submit">Mark as Learned</button>
-        </form>
-        <div id="progressResult" class="progress"></div>
-    </div>
-</div>
-<script>
 let topics = [];
 let path = [];
 
-document.getElementById('graphForm').onsubmit = async function(e) {
+// Build topics from URLs
+const graphForm = document.getElementById('graphForm');
+graphForm.onsubmit = async function(e) {
     e.preventDefault();
     document.getElementById('topicsSection').style.display = 'none';
     document.getElementById('pathSection').style.display = 'none';
@@ -66,7 +15,7 @@ document.getElementById('graphForm').onsubmit = async function(e) {
     });
     const data = await res.json();
     if (data.nodes) {
-        topics = data.nodes.filter(n => !n.startsWith('res_'));
+        topics = data.nodes;
         if (topics.length === 0) {
             alert('No topics found. Try different links.');
             return;
@@ -97,7 +46,9 @@ document.getElementById('graphForm').onsubmit = async function(e) {
     }
 };
 
-document.getElementById('pathForm').onsubmit = async function(e) {
+// Find path
+const pathForm = document.getElementById('pathForm');
+pathForm.onsubmit = async function(e) {
     e.preventDefault();
     document.getElementById('pathSection').style.display = 'none';
     const start = document.getElementById('startTopic').value;
@@ -134,7 +85,9 @@ document.getElementById('pathForm').onsubmit = async function(e) {
     }
 };
 
-document.getElementById('progressForm').onsubmit = async function(e) {
+// Mark topic as learned
+const progressForm = document.getElementById('progressForm');
+progressForm.onsubmit = async function(e) {
     e.preventDefault();
     const concept_id = document.getElementById('learnedTopic').value;
     const mastery = 1.0;
@@ -148,6 +101,3 @@ document.getElementById('progressForm').onsubmit = async function(e) {
         '<span class="success">Marked as learned!</span>' :
         '<span class="error">' + (data.detail || 'Error updating progress.') + '</span>';
 };
-</script>
-</body>
-</html>
