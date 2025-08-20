@@ -1,9 +1,0 @@
-fastapi
-uvicorn
-networkx
-spacy
-sentence-transformers
-requests
-beautifulsoup4
-pydantic
-python-dotenv
