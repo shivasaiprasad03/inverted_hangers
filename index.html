@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FitAI - Your Personal Fitness Assistant</title>
+    <link rel="stylesheet" href="/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <i class="fas fa-dumbbell"></i>
+                <h1>FitAI</h1>
+            </div>
+            <p class="tagline">Your AI-Powered Personal Fitness Assistant</p>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content" id="mainContent">
+            <!-- Landing Page -->
+            <div class="landing-page" id="landingPage">
+                <div class="hero-section">
+                    <h2>Transform Your Body with AI</h2>
+                    <p>Choose your fitness journey and let our AI create personalized plans just for you</p>
+                </div>
+
+                <div class="cards-container">
+                    <div class="card" onclick="showForm('bodyMaker')">
+                        <div class="card-icon">
+                            <i class="fas fa-user-plus"></i>
+                        </div>
+                        <h3>Body Maker</h3>
+                        <p>Build muscle and gain strength with personalized workout and nutrition plans</p>
+                        <div class="card-arrow">
+                            <i class="fas fa-arrow-right"></i>
+                        </div>
+                    </div>
+
+                    <div class="card" onclick="showForm('bodyMaintainer')">
+                        <div class="card-icon">
+                            <i class="fas fa-balance-scale"></i>
+                        </div>
+                        <h3>Body Maintainer</h3>
+                        <p>Maintain your current physique with balanced diet and exercise routines</p>
+                        <div class="card-arrow">
+                            <i class="fas fa-arrow-right"></i>
+                        </div>
+                    </div>
+
+                    <div class="card" onclick="showForm('weightLoss')">
+                        <div class="card-icon">
+                            <i class="fas fa-weight"></i>
+                        </div>
+                        <h3>Lose Weight</h3>
+                        <p>Achieve your weight loss goals with targeted workouts and meal plans</p>
+                        <div class="card-arrow">
+                            <i class="fas fa-arrow-right"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Forms Section -->
+            <div class="form-section" id="formSection" style="display: none;">
+                <button class="back-btn" onclick="showLanding()">
+                    <i class="fas fa-arrow-left"></i> Back
+                </button>
+
+                <!-- Body Maker Form -->
+                <div class="form-container" id="bodyMakerForm" style="display: none;">
+                    <h2><i class="fas fa-user-plus"></i> Body Maker Assessment</h2>
+                    <form id="bodyMakerInputs">
+                        <div class="form-group">
+                            <label>Height (cm)</label>
+                            <input type="number" name="height" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Weight (kg)</label>
+                            <input type="number" name="weight" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Age</label>
+                            <input type="number" name="age" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Gender</label>
+                            <select name="gender" required>
+                                <option value="">Select Gender</option>
+                                <option value="male">Male</option>
+                                <option value="female">Female</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Fitness Level</label>
+                            <select name="fitnessLevel" required>
+                                <option value="">Select Level</option>
+                                <option value="beginner">Beginner</option>
+                                <option value="intermediate">Intermediate</option>
+                                <option value="advanced">Advanced</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Primary Goal</label>
+                            <select name="goal" required>
+                                <option value="">Select Goal</option>
+                                <option value="muscle-gain">Muscle Gain</option>
+                                <option value="strength">Strength Building</option>
+                                <option value="bulk">Bulk Up</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="submit-btn">
+                            <i class="fas fa-magic"></i> Generate My Plan
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Body Maintainer Form -->
+                <div class="form-container" id="bodyMaintainerForm" style="display: none;">
+                    <h2><i class="fas fa-balance-scale"></i> Body Maintainer Assessment</h2>
+                    <form id="bodyMaintainerInputs">
+                        <div class="form-group">
+                            <label>Height (cm)</label>
+                            <input type="number" name="height" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Weight (kg)</label>
+                            <input type="number" name="weight" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Age</label>
+                            <input type="number" name="age" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Gender</label>
+                            <select name="gender" required>
+                                <option value="">Select Gender</option>
+                                <option value="male">Male</option>
+                                <option value="female">Female</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Current Diet Type</label>
+                            <select name="dietType" required>
+                                <option value="">Select Diet</option>
+                                <option value="balanced">Balanced Diet</option>
+                                <option value="vegetarian">Vegetarian</option>
+                                <option value="vegan">Vegan</option>
+                                <option value="keto">Ketogenic</option>
+                                <option value="mediterranean">Mediterranean</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Activity Level</label>
+                            <select name="activityLevel" required>
+                                <option value="">Select Level</option>
+                                <option value="sedentary">Sedentary</option>
+                                <option value="light">Lightly Active</option>
+                                <option value="moderate">Moderately Active</option>
+                                <option value="very">Very Active</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="submit-btn">
+                            <i class="fas fa-magic"></i> Generate My Plan
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Weight Loss Form -->
+                <div class="form-container" id="weightLossForm" style="display: none;">
+                    <h2><i class="fas fa-weight"></i> Weight Loss Assessment</h2>
+                    <form id="weightLossInputs">
+                        <div class="form-group">
+                            <label>Height (cm)</label>
+                            <input type="number" name="height" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Current Weight (kg)</label>
+                            <input type="number" name="weight" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Target Weight (kg)</label>
+                            <input type="number" name="targetWeight" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Age</label>
+                            <input type="number" name="age" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Gender</label>
+                            <select name="gender" required>
+                                <option value="">Select Gender</option>
+                                <option value="male">Male</option>
+                                <option value="female">Female</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Current Food Habits</label>
+                            <textarea name="foodHabits" placeholder="Describe your current eating habits..." required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Weight Loss Timeline</label>
+                            <select name="timeline" required>
+                                <option value="">Select Timeline</option>
+                                <option value="3months">3 Months</option>
+                                <option value="6months">6 Months</option>
+                                <option value="1year">1 Year</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="submit-btn">
+                            <i class="fas fa-magic"></i> Generate My Plan
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div class="results-section" id="resultsSection" style="display: none;">
+                <button class="back-btn" onclick="showLanding()">
+                    <i class="fas fa-home"></i> Home
+                </button>
+                
+                <div class="results-container">
+                    <div class="loading" id="loading">
+                        <div class="spinner"></div>
+                        <p>AI is analyzing your data and creating your personalized plan...</p>
+                    </div>
+                    
+                    <div class="results-content" id="resultsContent" style="display: none;">
+                        <div class="plan-header">
+                            <h2 id="planTitle"></h2>
+                            <div class="bmi-info" id="bmiInfo"></div>
+                        </div>
+                        
+                        <div class="plan-sections">
+                            <div class="diet-plan">
+                                <h3><i class="fas fa-utensils"></i> Diet Plan</h3>
+                                <div id="dietContent"></div>
+                            </div>
+                            
+                            <div class="workout-plan">
+                                <h3><i class="fas fa-dumbbell"></i> Workout Plan</h3>
+                                <div id="workoutContent"></div>
+                            </div>
+                            
+                            <div class="daily-tracker">
+                                <h3><i class="fas fa-chart-line"></i> Daily Progress Tracker</h3>
+                                <div class="score-display">
+                                    <div class="score-item">
+                                        <span>Today's Score:</span>
+                                        <span id="todayScore">0</span>
+                                    </div>
+                                    <div class="score-item">
+                                        <span>Target Score:</span>
+                                        <span id="targetScore">100</span>
+                                    </div>
+                                </div>
+                                <div class="progress-chart">
+                                    <canvas id="progressChart" width="400" height="200"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
