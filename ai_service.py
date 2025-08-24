@@ -3,11 +3,112 @@ import json
 from datetime import datetime
 import google.generativeai as genai
 
+import numpy as np
+from scipy.optimize import linprog
+
 class FitnessAI:
     def __init__(self, api_key):
-        """Initialize the Fitness AI with Gemini API key"""
-        genai.configure(api_key=AIzaSyAFe5o_UlsUkVQ3ZJo4w0VZPRChSgKnrDQ)
-        self.model = genai.GenerativeModel('gemini-pro')
+        # For adaptive coaching state (could be persisted in production)
+        self.ema_weight = None
+        self.ema_perf = None
+        self.ema_readiness = None
+        self.readiness_history = []
+        self.last_pid_error = 0
+        self.pid_integral = 0
+        # Configure Gemini API key and model
+        genai.configure(api_key=api_key)
+        self.model = genai.GenerativeModel('models/gemini-1.0-pro')
+    # --- Adaptive Coaching Core ---
+    def update_ema(self, prev_ema, value, alpha=0.3):
+        if prev_ema is None:
+            return value
+        return alpha * value + (1 - alpha) * prev_ema
+
+    def pid_adjustment(self, target, actual, last_error, integral, kp=0.7, ki=0.1, kd=0.2, bounds=(-400, 400)):
+        error = target - actual
+        integral += error
+        derivative = error - last_error
+        output = kp * error + ki * integral + kd * derivative
+        output = max(bounds[0], min(bounds[1], output))
+        return output, error, integral
+
+    def readiness_score(self, sleep_hrs, hr_rest, soreness, last_3d_vol):
+        # Normalize and weight inputs, then EMA
+        score = (
+            0.4 * min(sleep_hrs / 8, 1.0) +
+            0.2 * (1 - min(hr_rest / 80, 1.0)) +
+            0.2 * (1 - min(soreness / 10, 1.0)) +
+            0.2 * (1 - min(last_3d_vol / 5, 1.0))
+        ) * 100
+        self.ema_readiness = self.update_ema(self.ema_readiness, score, alpha=0.4)
+        self.readiness_history.append(self.ema_readiness)
+        return round(self.ema_readiness, 1)
+
+    def auto_deload(self, threshold=60):
+        # If readiness drops below threshold for 3+ days, trigger deload
+        if len(self.readiness_history) >= 3 and all(r < threshold for r in self.readiness_history[-3:]):
+            return True
+        return False
+
+    def periodized_workout_block(self, weeks=10, start_sets=10, fatigue_budget=100):
+        # Simple periodization: Hypertrophy (4w), Strength (3w), Power (2w), Deload (1w)
+        phases = ["Hypertrophy"]*4 + ["Strength"]*3 + ["Power"]*2 + ["Deload"]
+        block = []
+        sets = start_sets
+        for i, phase in enumerate(phases[:weeks]):
+            if phase == "Deload":
+                sets = max(4, int(sets * 0.5))
+            else:
+                sets = min(sets + 2, fatigue_budget // weeks)
+            block.append({"week": i+1, "phase": phase, "sets": sets})
+        return block
+
+    # --- Meal/Macro Optimization (Linear Programming) ---
+    def optimize_meal_plan(self, pantry, macros_target, cost_dict, prev_meal=None, tolerance=0.05):
+        # pantry: list of foods, each with macros per serving
+        # macros_target: dict with 'protein', 'carbs', 'fats' (grams)
+        # cost_dict: dict of food: cost per serving
+        # prev_meal: dict of food: servings (for repetition penalty)
+        n = len(pantry)
+        prot = np.array([f['protein'] for f in pantry])
+        carbs = np.array([f['carbs'] for f in pantry])
+        fats = np.array([f['fats'] for f in pantry])
+        cost = np.array([cost_dict.get(f['name'], 1) for f in pantry])
+        rep_penalty = np.zeros(n)
+        if prev_meal:
+            for i, f in enumerate(pantry):
+                rep_penalty[i] = 2 if prev_meal.get(f['name'], 0) > 0 else 0
+        c = cost + rep_penalty
+        # Constraints: macros within tolerance
+        A = [prot, carbs, fats, -prot, -carbs, -fats]
+        b = [
+            macros_target['protein'] * (1 + tolerance),
+            macros_target['carbs'] * (1 + tolerance),
+            macros_target['fats'] * (1 + tolerance),
+            -macros_target['protein'] * (1 - tolerance),
+            -macros_target['carbs'] * (1 - tolerance),
+            -macros_target['fats'] * (1 - tolerance)
+        ]
+        bounds = [(0, 5)] * n
+        res = linprog(c, A_ub=A, b_ub=b, bounds=bounds, method='highs')
+        servings = res.x if res.success else [0]*n
+        meal = {pantry[i]['name']: round(servings[i],2) for i in range(n) if servings[i]>0.1}
+        explain = {
+            'success': res.success,
+            'cost': float(res.fun) if res.success else None,
+            'status': res.message,
+            'servings': meal
+        }
+        return meal, explain
+
+    # --- Explainability Layer ---
+    def explain_adjustment(self, adj_type, formula, inputs, delta):
+        return {
+            'type': adj_type,
+            'formula': formula,
+            'inputs': inputs,
+            'delta': delta
+        }
     
     def calculate_bmi(self, height_cm, weight_kg):
         """Calculate BMI and return category"""
@@ -54,8 +155,13 @@ class FitnessAI:
         
         try:
             response = self.model.generate_content(prompt)
+            print("[Gemini API] Raw response:", response)
+            print("[Gemini API] Response text:", getattr(response, 'text', None))
             return self._parse_ai_response(response.text, 'body_maker', user_data)
         except Exception as e:
+            print("[Gemini API] Exception occurred:", str(e))
+            import traceback
+            traceback.print_exc()
             return self._generate_fallback_plan('body_maker', user_data)
     
     def generate_body_maintainer_plan(self, user_data):
@@ -114,12 +220,7 @@ class FitnessAI:
         """Parse AI response and structure it for the frontend"""
         
         bmi, bmi_category = self.calculate_bmi(user_data['height'], user_data['weight'])
-        bmr = self.calculate_bmr(user_data['weight'], user_data['height'], 
-                                user_data['age'], user_data['gender'])
-        
-        # This is a simplified parser - in a real implementation, 
-        # you would use more sophisticated NLP to extract structured data
-        
+        bmr = self.calculate_bmr(user_data['weight'], user_data['height'], user_data['age'], user_data['gender'])
         plan = {
             'title': f'Your AI-Generated {plan_type.replace("_", " ").title()} Plan',
             'bmi': bmi,
@@ -127,9 +228,54 @@ class FitnessAI:
             'bmr': round(bmr),
             'ai_analysis': ai_response,
             'generated_at': datetime.now().isoformat(),
-            'plan_type': plan_type
+            'plan_type': plan_type,
+            'explainability': []
         }
-        
+        # Adaptive feedback control (example: calories)
+        if 'weight_trend' in user_data and 'target_weight_trend' in user_data:
+            self.ema_weight = self.update_ema(self.ema_weight, user_data['weight_trend'])
+            adj, err, integ = self.pid_adjustment(user_data['target_weight_trend'], self.ema_weight, self.last_pid_error, self.pid_integral)
+            self.last_pid_error = err
+            self.pid_integral = integ
+            plan['calorie_adjustment'] = int(adj)
+            plan['explainability'].append(self.explain_adjustment(
+                'calorie',
+                'PID: Kp*e + Ki*∑e + Kd*Δe',
+                {'target': user_data['target_weight_trend'], 'actual': self.ema_weight, 'last_error': self.last_pid_error},
+                adj
+            ))
+        # Readiness & auto deload
+        if all(k in user_data for k in ['sleep_hrs','hr_rest','soreness','last_3d_vol']):
+            readiness = self.readiness_score(user_data['sleep_hrs'], user_data['hr_rest'], user_data['soreness'], user_data['last_3d_vol'])
+            plan['readiness'] = readiness
+            plan['auto_deload'] = self.auto_deload()
+            plan['explainability'].append(self.explain_adjustment(
+                'readiness',
+                '0.4*sleep/8 + 0.2*(1-HR/80) + 0.2*(1-soreness/10) + 0.2*(1-vol/5)',
+                {k: user_data[k] for k in ['sleep_hrs','hr_rest','soreness','last_3d_vol']},
+                readiness
+            ))
+        # Periodized block
+        if user_data.get('periodize', False):
+            block = self.periodized_workout_block()
+            plan['periodized_block'] = block
+            plan['explainability'].append(self.explain_adjustment(
+                'periodization',
+                'Algorithmic mesocycle: Hypertrophy→Strength→Power→Deload',
+                {'weeks': 10, 'start_sets': 10, 'fatigue_budget': 100},
+                block
+            ))
+        # Meal/macro optimization
+        if 'pantry' in user_data and 'macros_target' in user_data and 'cost_dict' in user_data:
+            meal, explain = self.optimize_meal_plan(user_data['pantry'], user_data['macros_target'], user_data['cost_dict'], user_data.get('prev_meal'))
+            plan['optimized_meal'] = meal
+            plan['meal_optimization_explain'] = explain
+            plan['explainability'].append(self.explain_adjustment(
+                'meal_optimization',
+                'Linear programming: min(cost+repetition) s.t. macros≈target',
+                {'macros_target': user_data['macros_target']},
+                meal
+            ))
         # Add specific structured data based on plan type
         if plan_type == 'body_maker':
             plan.update(self._structure_body_maker_data(user_data, bmr))
@@ -137,7 +283,6 @@ class FitnessAI:
             plan.update(self._structure_maintainer_data(user_data, bmr))
         elif plan_type == 'weight_loss':
             plan.update(self._structure_weight_loss_data(user_data, bmr))
-        
         return plan
     
     def _structure_body_maker_data(self, user_data, bmr):
@@ -226,7 +371,66 @@ class FitnessAI:
         bmi, bmi_category = self.calculate_bmi(user_data['height'], user_data['weight'])
         bmr = self.calculate_bmr(user_data['weight'], user_data['height'], 
                                 user_data['age'], user_data['gender'])
-        
+        explainability = [
+            self.explain_adjustment(
+                'nutrition',
+                'BMR*activity, protein=weight*1.6',
+                {'bmr': bmr, 'weight': user_data['weight']},
+                {
+                    'daily_calories': round(bmr * 1.5),
+                    'protein_g': round(user_data['weight'] * 1.6),
+                    'carbs_g': 200,
+                    'fats_g': 70
+                }
+            )
+        ]
+        if plan_type == 'body_maker':
+            workout_schedule = [
+                {'day': 'Monday', 'focus': 'Chest & Triceps', 'duration': '60-75 min'},
+                {'day': 'Tuesday', 'focus': 'Back & Biceps', 'duration': '60-75 min'},
+                {'day': 'Wednesday', 'focus': 'Legs', 'duration': '75-90 min'},
+                {'day': 'Thursday', 'focus': 'Shoulders', 'duration': '45-60 min'},
+                {'day': 'Friday', 'focus': 'Arms', 'duration': '45-60 min'},
+                {'day': 'Saturday', 'focus': 'Cardio/Core', 'duration': '30-45 min'},
+                {'day': 'Sunday', 'focus': 'Rest', 'duration': 'Recovery'}
+            ]
+            explainability.append(self.explain_adjustment(
+                'workout',
+                'Standard split routine',
+                {},
+                workout_schedule
+            ))
+            extra = {'workout_schedule': workout_schedule}
+        elif plan_type == 'body_maintainer':
+            activity_recommendations = [
+                '150 minutes moderate cardio per week',
+                '2-3 strength training sessions',
+                'Daily walking (8,000-10,000 steps)',
+                'Flexibility/yoga 2-3 times per week'
+            ]
+            explainability.append(self.explain_adjustment(
+                'activity',
+                'General health maintenance',
+                {},
+                activity_recommendations
+            ))
+            extra = {'activity_recommendations': activity_recommendations}
+        elif plan_type == 'weight_loss':
+            cardio_plan = [
+                'HIIT training 3x per week (20-25 min)',
+                'Steady-state cardio 2x per week (30-45 min)',
+                'Daily walking (10,000+ steps)',
+                'Active recovery on rest days'
+            ]
+            explainability.append(self.explain_adjustment(
+                'cardio',
+                'Standard weight loss cardio',
+                {},
+                cardio_plan
+            ))
+            extra = {'cardio_plan': cardio_plan}
+        else:
+            extra = {}
         return {
             'title': f'Your {plan_type.replace("_", " ").title()} Plan',
             'bmi': bmi,
@@ -240,7 +444,9 @@ class FitnessAI:
                 'protein_g': round(user_data['weight'] * 1.6),
                 'carbs_g': 200,
                 'fats_g': 70
-            }
+            },
+            'explainability': explainability,
+            **extra
         }
 
 # Example usage and API endpoint simulation

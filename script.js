@@ -39,7 +39,12 @@ function handleFormSubmit(formId, goal) {
         const formData = new FormData(form);
         const userData = {};
         formData.forEach((value, key) => {
-            userData[key] = value;
+            // Convert numeric fields to numbers
+            if (["height", "weight", "age", "target_weight"].includes(key)) {
+                userData[key] = Number(value);
+            } else {
+                userData[key] = value;
+            }
         });
         showResults();
         fetch('/generate-plan', {
@@ -68,6 +73,7 @@ function handleFormSubmit(formId, goal) {
 }
 
 // Render Results
+
 function renderResults(goal, userData, plan) {
     // Plan Title
     let planTitle = '';
@@ -77,59 +83,123 @@ function renderResults(goal, userData, plan) {
     else planTitle = 'Personalized Plan';
     document.getElementById('planTitle').textContent = planTitle;
 
-    // BMI Info (if possible)
+    // BMI Info
     let bmiHtml = '';
-    if (userData.height && userData.weight) {
-        const heightM = parseFloat(userData.height) / 100;
-        const weight = parseFloat(userData.weight);
-        if (heightM > 0 && weight > 0) {
-            const bmi = (weight / (heightM * heightM)).toFixed(1);
-            let bmiStatus = '';
-            if (bmi < 18.5) bmiStatus = 'Underweight';
-            else if (bmi < 25) bmiStatus = 'Normal';
-            else if (bmi < 30) bmiStatus = 'Overweight';
-            else bmiStatus = 'Obese';
-            bmiHtml = `<strong>BMI:</strong> ${bmi} (${bmiStatus})`;
-        }
+    if (plan.bmi && plan.bmi_category) {
+        bmiHtml = `<strong>BMI:</strong> ${plan.bmi} (${plan.bmi_category})`;
     }
     document.getElementById('bmiInfo').innerHTML = bmiHtml;
 
-    // Diet Plan
-    let dietHtml = `<ul>`;
-    plan.meals.forEach(meal => {
-        dietHtml += `<li>${meal}</li>`;
-    });
-    dietHtml += `</ul>`;
-    dietHtml += `<p><strong>Calories:</strong> ${plan.calories} kcal | <strong>Protein:</strong> ${plan.protein}g | <strong>Carbs:</strong> ${plan.carbs}g | <strong>Fats:</strong> ${plan.fats}g</p>`;
+
+    // Diet Plan & Meal Adjustments
+    let dietHtml = '';
+    if (plan.optimized_meal && Object.keys(plan.optimized_meal).length > 0) {
+        dietHtml += `<div class=\"meal-item animated-flipIn\">
+            <h4><i class=\"fas fa-seedling\"></i> Optimized Meal Plan</h4>
+            <ul>`;
+        Object.entries(plan.optimized_meal).forEach(([food, servings]) => {
+            dietHtml += `<li>${food}: <strong>${servings}</strong> servings</li>`;
+        });
+        dietHtml += `</ul></div>`;
+    }
+    if (plan.nutrition) {
+        dietHtml += `<div class=\"nutrition-info\">
+            <p><strong>Calories:</strong> ${plan.nutrition.daily_calories} kcal</p>
+            <p><strong>Protein:</strong> ${plan.nutrition.protein_g}g | <strong>Carbs:</strong> ${plan.nutrition.carbs_g}g | <strong>Fats:</strong> ${plan.nutrition.fats_g}g</p>
+        </div>`;
+    }
+    if (!dietHtml) {
+        dietHtml = `<div class='empty-section'>No diet plan data available.</div>`;
+    }
     document.getElementById('dietContent').innerHTML = dietHtml;
 
-    // Workout Plan
-    let workoutHtml = `<ul>`;
-    plan.exercises.forEach(ex => {
-        workoutHtml += `<li>${ex.name} <span style=\"color:#888;\">(${ex.sets})</span></li>`;
-    });
-    workoutHtml += `</ul>`;
-    document.getElementById('workoutContent').innerHTML = workoutHtml;
+    // Meal Adjustments (before/after)
 
-    // Suggestions (optional)
-    if (plan.suggestions) {
-        workoutHtml += `<h4>Tips:</h4><ul>`;
-        plan.suggestions.forEach(s => {
-            workoutHtml += `<li>${s}</li>`;
+    let workoutHtml = '';
+    if (plan.workout_schedule && plan.workout_schedule.length > 0) {
+        workoutHtml += `<ul class=\"animated-fadeIn\">`;
+        plan.workout_schedule.forEach(day => {
+            workoutHtml += `<li><strong>${day.day}:</strong> ${day.focus} <span style=\"color:#888;\">(${day.duration})</span></li>`;
         });
         workoutHtml += `</ul>`;
-        document.getElementById('workoutContent').innerHTML = workoutHtml;
     }
+    if (plan.activity_recommendations && plan.activity_recommendations.length > 0) {
+        workoutHtml += `<h4>Activity Recommendations</h4><ul>`;
+        plan.activity_recommendations.forEach(rec => {
+            workoutHtml += `<li>${rec}</li>`;
+        });
+        workoutHtml += `</ul>`;
+    }
+    if (plan.cardio_plan && plan.cardio_plan.length > 0) {
+        workoutHtml += `<h4>Cardio Plan</h4><ul>`;
+        plan.cardio_plan.forEach(rec => {
+            workoutHtml += `<li>${rec}</li>`;
+        });
+        workoutHtml += `</ul>`;
+    }
+    if (!workoutHtml) {
+        workoutHtml = `<div class='empty-section'>No workout plan data available.</div>`;
+    }
+    document.getElementById('workoutContent').innerHTML = workoutHtml;
+
+    // Periodized Block
+    let blockHtml = '';
+    if (plan.periodized_block) {
+        blockHtml += `<div class="periodized-block-visual animated-flipIn">
+            <h4>Periodized Mesocycle</h4>
+            <table class="period-table"><tr><th>Week</th><th>Phase</th><th>Sets</th></tr>`;
+        plan.periodized_block.forEach(w => {
+            blockHtml += `<tr><td>${w.week}</td><td>${w.phase}</td><td>${w.sets}</td></tr>`;
+        });
+        blockHtml += `</table></div>`;
+    }
+    document.getElementById('periodizedBlock').innerHTML = blockHtml;
+
+    // Readiness Info
+    let readinessHtml = '';
+    if (plan.readiness !== undefined) {
+        readinessHtml += `<div class="readiness-bar animated-fadeIn">
+            <span>Readiness Score: <strong>${plan.readiness}</strong></span>
+            <div class="readiness-bar-outer"><div class="readiness-bar-inner" style="width:${plan.readiness}%;"></div></div>
+        </div>`;
+        if (plan.auto_deload) {
+            readinessHtml += `<div class="deload-alert animated-pulse"><i class="fas fa-exclamation-triangle"></i> Auto Deload Triggered!</div>`;
+        }
+    }
+    document.getElementById('readinessInfo').innerHTML = readinessHtml;
+
+    // Explainability
+    let explainHtml = '';
+    if (plan.explainability && plan.explainability.length > 0) {
+        plan.explainability.forEach(exp => {
+            explainHtml += `<div class="explain-card animated-fadeIn">
+                <strong>${exp.type.toUpperCase()}</strong><br>
+                <span class="explain-formula">Formula: <code>${exp.formula}</code></span><br>
+                <span class="explain-inputs">Inputs: <code>${JSON.stringify(exp.inputs)}</code></span><br>
+                <span class="explain-delta">Delta: <code>${JSON.stringify(exp.delta)}</code></span>
+            </div>`;
+        });
+    }
+    document.getElementById('explainabilityContent').innerHTML = explainHtml;
 
     // Progress Tracker (simple mock)
-    const todayScore = plan.exercises.reduce((sum, ex) => sum + (ex.points || 0), 0);
+    let todayScore = 0;
+    if (plan.exercises && Array.isArray(plan.exercises)) {
+        todayScore = plan.exercises.reduce((sum, ex) => sum + (ex.points || 0), 0);
+    }
     document.getElementById('todayScore').textContent = todayScore;
     document.getElementById('targetScore').textContent = 100;
     renderProgressChart(todayScore, 100);
 
+    // Animate results in
     document.getElementById('resultsContent').style.display = 'block';
+    document.getElementById('resultsContent').classList.add('animated-fadeIn');
 }
-
+// Ensure functions are globally available
+window.showForm = showForm;
+window.showLanding = showLanding;
+window.handleFormSubmit = handleFormSubmit;
+window.renderResults = renderResults;
 // Progress Chart (simple bar)
 function renderProgressChart(today, target) {
     const ctx = document.getElementById('progressChart').getContext('2d');
@@ -154,9 +224,21 @@ function renderProgressChart(today, target) {
 
 // Attach form handlers on DOMContentLoaded
 window.addEventListener('DOMContentLoaded', function() {
-    handleFormSubmit('bodyMakerInputs', 'body-maker');
-    handleFormSubmit('bodyMaintainerInputs', 'body-maintainer');
-    handleFormSubmit('weightLossInputs', 'weight-loss');
+    console.log('DOM loaded, attaching form handlers...');
+    const forms = [
+        {id: 'bodyMakerInputs', goal: 'body-maker'},
+        {id: 'bodyMaintainerInputs', goal: 'body-maintainer'},
+        {id: 'weightLossInputs', goal: 'weight-loss'}
+    ];
+    forms.forEach(f => {
+        const form = document.getElementById(f.id);
+        if (form) {
+            console.log('Attaching handler to', f.id);
+            handleFormSubmit(f.id, f.goal);
+        } else {
+            console.warn('Form not found:', f.id);
+        }
+    });
 });
 
 // Load Chart.js dynamically if not present
@@ -168,3 +250,4 @@ window.addEventListener('DOMContentLoaded', function() {
         document.head.appendChild(script);
     }
 })();
+// End of script.js

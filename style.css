@@ -1,3 +1,115 @@
+/* --- Mesmerizing Animations & Healthy Theme --- */
+.animated-fadeIn {
+    animation: fadeIn 1s cubic-bezier(0.4,0,0.2,1);
+}
+.animated-flipIn {
+    animation: flipIn 0.8s cubic-bezier(0.4,0,0.2,1);
+}
+.animated-pulse {
+    animation: pulse 1.2s infinite alternate;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: none; }
+}
+@keyframes flipIn {
+    from { opacity: 0; transform: rotateY(90deg) scale(0.8); }
+    to { opacity: 1; transform: none; }
+}
+@keyframes pulse {
+    from { box-shadow: 0 0 0 0 #38b2ac44; }
+    to { box-shadow: 0 0 0 12px #38b2ac11; }
+}
+
+.explain-card {
+    background: linear-gradient(120deg, #e0ffe7 0%, #c7f0ff 100%);
+    border-left: 5px solid #38b2ac;
+    border-radius: 12px;
+    margin-bottom: 18px;
+    padding: 18px 22px;
+    box-shadow: 0 2px 12px rgba(56,178,172,0.08);
+    font-size: 1rem;
+    color: #234e52;
+    transition: box-shadow 0.3s;
+}
+.explain-card code {
+    background: #f0fff4;
+    color: #276749;
+    border-radius: 4px;
+    padding: 2px 5px;
+    font-size: 0.95em;
+}
+.explain-formula { color: #3182ce; }
+.explain-inputs { color: #805ad5; }
+.explain-delta { color: #38b2ac; }
+
+.meal-adjustment-visual {
+    background: linear-gradient(90deg, #f0fff4 0%, #e6fffa 100%);
+    border-left: 4px solid #38b2ac;
+    border-radius: 10px;
+    margin: 18px 0;
+    padding: 14px 18px;
+    color: #22543d;
+    box-shadow: 0 2px 10px #38b2ac11;
+}
+.periodized-block-visual {
+    background: linear-gradient(90deg, #e0e7ff 0%, #f0fff4 100%);
+    border-left: 4px solid #667eea;
+    border-radius: 10px;
+    margin: 18px 0;
+    padding: 14px 18px;
+    color: #373a53;
+    box-shadow: 0 2px 10px #667eea11;
+}
+.period-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+.period-table th, .period-table td {
+    border: 1px solid #cbd5e1;
+    padding: 6px 10px;
+    text-align: center;
+}
+.period-table th {
+    background: #667eea;
+    color: #fff;
+}
+
+.readiness-bar {
+    margin-top: 18px;
+    background: #e6fffa;
+    border-radius: 8px;
+    padding: 10px 18px;
+    color: #22543d;
+    font-weight: 500;
+}
+.readiness-bar-outer {
+    width: 100%;
+    background: #c6f6d5;
+    border-radius: 6px;
+    height: 16px;
+    margin-top: 8px;
+    overflow: hidden;
+}
+.readiness-bar-inner {
+    height: 100%;
+    background: linear-gradient(90deg, #38b2ac 0%, #667eea 100%);
+    border-radius: 6px;
+    transition: width 0.7s cubic-bezier(0.4,0,0.2,1);
+}
+.deload-alert {
+    margin-top: 12px;
+    color: #e53e3e;
+    font-weight: bold;
+    background: #fff5f5;
+    border-left: 4px solid #e53e3e;
+    border-radius: 8px;
+    padding: 8px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
 * {
     margin: 0;
     padding: 0;

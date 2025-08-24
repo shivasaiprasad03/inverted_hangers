@@ -96,22 +96,14 @@
                         </div>
                         <div class="form-group">
                             <label>Fitness Level</label>
-                            <select name="fitnessLevel" required>
+                            <select name="fitness_level" required>
                                 <option value="">Select Level</option>
                                 <option value="beginner">Beginner</option>
                                 <option value="intermediate">Intermediate</option>
                                 <option value="advanced">Advanced</option>
                             </select>
                         </div>
-                        <div class="form-group">
-                            <label>Primary Goal</label>
-                            <select name="goal" required>
-                                <option value="">Select Goal</option>
-                                <option value="muscle-gain">Muscle Gain</option>
-                                <option value="strength">Strength Building</option>
-                                <option value="bulk">Bulk Up</option>
-                            </select>
-                        </div>
+                        <input type="hidden" name="goal" value="body-maker">
                         <button type="submit" class="submit-btn">
                             <i class="fas fa-magic"></i> Generate My Plan
                         </button>
@@ -144,7 +136,7 @@
                         </div>
                         <div class="form-group">
                             <label>Current Diet Type</label>
-                            <select name="dietType" required>
+                            <select name="diet_type" required>
                                 <option value="">Select Diet</option>
                                 <option value="balanced">Balanced Diet</option>
                                 <option value="vegetarian">Vegetarian</option>
@@ -155,7 +147,7 @@
                         </div>
                         <div class="form-group">
                             <label>Activity Level</label>
-                            <select name="activityLevel" required>
+                            <select name="activity_level" required>
                                 <option value="">Select Level</option>
                                 <option value="sedentary">Sedentary</option>
                                 <option value="light">Lightly Active</option>
@@ -163,6 +155,16 @@
                                 <option value="very">Very Active</option>
                             </select>
                         </div>
+                        <div class="form-group">
+                            <label>Fitness Level</label>
+                            <select name="fitness_level" required>
+                                <option value="">Select Level</option>
+                                <option value="beginner">Beginner</option>
+                                <option value="intermediate">Intermediate</option>
+                                <option value="advanced">Advanced</option>
+                            </select>
+                        </div>
+                        <input type="hidden" name="goal" value="body-maintainer">
                         <button type="submit" class="submit-btn">
                             <i class="fas fa-magic"></i> Generate My Plan
                         </button>
@@ -183,7 +185,7 @@
                         </div>
                         <div class="form-group">
                             <label>Target Weight (kg)</label>
-                            <input type="number" name="targetWeight" required>
+                            <input type="number" name="target_weight" required>
                         </div>
                         <div class="form-group">
                             <label>Age</label>
@@ -199,7 +201,7 @@
                         </div>
                         <div class="form-group">
                             <label>Current Food Habits</label>
-                            <textarea name="foodHabits" placeholder="Describe your current eating habits..." required></textarea>
+                            <textarea name="food_habits" placeholder="Describe your current eating habits..." required></textarea>
                         </div>
                         <div class="form-group">
                             <label>Weight Loss Timeline</label>
@@ -210,6 +212,16 @@
                                 <option value="1year">1 Year</option>
                             </select>
                         </div>
+                        <div class="form-group">
+                            <label>Fitness Level</label>
+                            <select name="fitness_level" required>
+                                <option value="">Select Level</option>
+                                <option value="beginner">Beginner</option>
+                                <option value="intermediate">Intermediate</option>
+                                <option value="advanced">Advanced</option>
+                            </select>
+                        </div>
+                        <input type="hidden" name="goal" value="weight-loss">
                         <button type="submit" class="submit-btn">
                             <i class="fas fa-magic"></i> Generate My Plan
                         </button>
@@ -239,13 +251,13 @@
                             <div class="diet-plan">
                                 <h3><i class="fas fa-utensils"></i> Diet Plan</h3>
                                 <div id="dietContent"></div>
+                                <div id="mealAdjustments" class="meal-adjustments"></div>
                             </div>
-                            
                             <div class="workout-plan">
                                 <h3><i class="fas fa-dumbbell"></i> Workout Plan</h3>
                                 <div id="workoutContent"></div>
+                                <div id="periodizedBlock" class="periodized-block"></div>
                             </div>
-                            
                             <div class="daily-tracker">
                                 <h3><i class="fas fa-chart-line"></i> Daily Progress Tracker</h3>
                                 <div class="score-display">
@@ -261,6 +273,11 @@
                                 <div class="progress-chart">
                                     <canvas id="progressChart" width="400" height="200"></canvas>
                                 </div>
+                                <div id="readinessInfo" class="readiness-info"></div>
+                            </div>
+                            <div class="explainability-section" id="explainabilitySection">
+                                <h3><i class="fas fa-lightbulb"></i> Plan Explainability</h3>
+                                <div id="explainabilityContent"></div>
                             </div>
                         </div>
                     </div>
