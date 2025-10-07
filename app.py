@@ -5,7 +5,7 @@ import os
 app = Flask(__name__)
 
 # Set your Gemini API key here
-API_KEY = "AIzaSyBlyNecwjr_z6NfxulzREEOQ5zsUOv6-ok"
+API_KEY = "API KEY"
 
 @app.route('/generate-plan', methods=['POST'])
 def generate_plan():
